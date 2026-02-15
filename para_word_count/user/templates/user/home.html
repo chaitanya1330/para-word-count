@@ -1,0 +1,232 @@
+{% extends "user/index.html" %}
+{% load static %}
+
+{% block start %}
+
+<div class="container" style="margin-top: 30px; max-width: 900px;">
+  
+  <!-- Success/Error Messages -->
+  <div id="message-box"></div>
+  
+  <!-- Loading Bar -->
+  <div id="loading-bar" style="display: none; margin-bottom: 20px;">
+    <p style="margin-bottom: 5px;">Processing...</p>
+    <div style="width: 100%; height: 20px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 5px; overflow: hidden;">
+      <div id="progress" style="height: 100%; background-color: #4CAF50; width: 0%; transition: width 0.3s;"></div>
+    </div>
+  </div>
+
+  <div style="background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 30px;">
+    <h2>Submit Paragraph</h2>
+    <p style="color: #666;">Paste your paragraph below. Words will be tokenized and counted automatically.</p>
+    
+    <form id="paragraph-form">
+      {% csrf_token %}
+      <div style="margin-bottom: 15px;">
+        <label for="raw-text" style="display: block; margin-bottom: 5px; font-weight: bold;">Paragraph:</label>
+        <textarea id="raw-text" name="raw_text" style="width: 100%; height: 150px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial;" placeholder="Paste your paragraph here..."></textarea>
+      </div>
+      <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">Save Paragraph</button>
+    </form>
+  </div>
+
+  <!-- Search Section -->
+  <div style="background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 30px;">
+    <h2>Search Word</h2>
+    <p style="color: #666;">Find paragraphs containing a specific word. See top 10 by frequency.</p>
+    
+    <form id="search-form">
+      {% csrf_token %}
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="search-word" name="word" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px;" placeholder="Enter a word to search...">
+        <button type="submit" style="background-color: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">Search</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Results Section -->
+  <div id="results-section" style="display: none;">
+    <h2>Search Results</h2>
+    <div id="results-container" style="margin-top: 15px;"></div>
+  </div>
+
+</div>
+
+<script>
+// CSRF Token
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Show Message
+function showMessage(message, type) {
+  const messageBox = document.getElementById('message-box');
+  messageBox.innerHTML = '';
+  const div = document.createElement('div');
+  div.style.padding = '15px';
+  div.style.marginBottom = '15px';
+  div.style.borderRadius = '4px';
+  div.style.color = 'white';
+  div.style.backgroundColor = type === 'success' ? '#4CAF50' : '#f44336';
+  div.textContent = message;
+  messageBox.appendChild(div);
+  
+  setTimeout(() => {
+    messageBox.innerHTML = '';
+  }, 5000);
+}
+
+// Show/Hide Loading Bar
+function showLoadingBar() {
+  document.getElementById('loading-bar').style.display = 'block';
+  animateProgress();
+}
+
+function hideLoadingBar() {
+  document.getElementById('loading-bar').style.display = 'none';
+  document.getElementById('progress').style.width = '0%';
+}
+
+function animateProgress() {
+  let width = 0;
+  const interval = setInterval(() => {
+    if (width < 90) {
+      width += Math.random() * 30;
+      document.getElementById('progress').style.width = width + '%';
+    } else {
+      clearInterval(interval);
+    }
+  }, 200);
+}
+
+// ===== SAVE PARAGRAPH =====
+document.getElementById('paragraph-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const rawText = document.getElementById('raw-text').value.trim();
+  
+  if (!rawText) {
+    showMessage('Please enter a paragraph', 'error');
+    return;
+  }
+  
+  showLoadingBar();
+  
+  try {
+    const response = await fetch('/user/api/save-paragraph/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken,
+      },
+      body: JSON.stringify({ raw_text: rawText })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      const count = data.paragraphs_created || 1;
+      showMessage(`✓ Successfully saved and processed ${count} paragraph(s)!`, 'success');
+      document.getElementById('raw-text').value = '';
+      document.getElementById('results-section').style.display = 'none';
+    } else {
+      showMessage('Error: ' + (data.message || 'Failed to save'), 'error');
+    }
+  } catch (error) {
+    showMessage('Network error: ' + error.message, 'error');
+  } finally {
+    hideLoadingBar();
+  }
+});
+
+// ===== SEARCH WORD =====
+document.getElementById('search-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const word = document.getElementById('search-word').value.trim();
+  
+  if (!word) {
+    showMessage('Please enter a word to search', 'error');
+    return;
+  }
+  
+  showLoadingBar();
+  
+  try {
+    const response = await fetch(`/user/api/search-word/?word=${encodeURIComponent(word)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken,
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      displayResults(data);
+      showMessage(`✓ Found ${data.results_count} paragraphs containing "${word}"`, 'success');
+    } else {
+      showMessage('Error: ' + (data.message || 'Search failed'), 'error');
+    }
+  } catch (error) {
+    showMessage('Network error: ' + error.message, 'error');
+  } finally {
+    hideLoadingBar();
+  }
+});
+
+// Display Search Results
+function displayResults(data) {
+  const resultsSection = document.getElementById('results-section');
+  const resultsContainer = document.getElementById('results-container');
+  
+  if (data.results.length === 0) {
+    resultsContainer.innerHTML = '<p style="color: #666;">No results found.</p>';
+    resultsSection.style.display = 'block';
+    return;
+  }
+  
+  let html = '';
+  data.results.forEach((result, index) => {
+    html += `
+      <div style="background-color: white; padding: 15px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;">
+        <div style="margin-bottom: 10px;">
+          <strong>#${index + 1} - ${result.user_name}</strong>
+          <span style="float: right; color: #4CAF50; font-weight: bold;">Word count: ${result.word_count}</span>
+        </div>
+        <p style="margin: 10px 0; color: #666; line-height: 1.6;">
+          ${escapeHtml(result.raw_text)}${result.raw_text.length > 500 ? '...' : ''}
+        </p>
+        <small style="color: #999;">Posted: ${new Date(result.created_at).toLocaleString()}</small>
+      </div>
+    `;
+  });
+  
+  resultsContainer.innerHTML = html;
+  resultsSection.style.display = 'block';
+  resultsSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+</script>
+
+{% endblock %}
