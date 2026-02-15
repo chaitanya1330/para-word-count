@@ -1,11 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User as AuthUser
 
-# Create your models here.
 
-
-class User(models.Model):
-  name = models.CharField(max_length=255)
   email = models.EmailField(unique = True, max_length=254)
   date_of_birth = models.DateField(help_text="Please use the format YYYY-MM-DD")
   created_date = models.DateTimeField(auto_now_add = True)
