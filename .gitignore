@@ -74,4 +74,3 @@ debug_words.py
 test_tokenize.py
 clear_db.py
 test_split.py
-create_superuser.py
