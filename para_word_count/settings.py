@@ -156,3 +156,20 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes hard limit
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Celery Beat Scheduler Configuration
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-old-paragraphs': {
+        'task': 'user.tasks.cleanup_old_paragraphs',
+        'schedule': crontab(hour=0, minute=0),  # Daily at midnight
+    },
+    'generate-statistics': {
+        'task': 'user.tasks.generate_daily_statistics',
+        'schedule': crontab(hour=1, minute=0),  # Daily at 1 AM
+    },
+}

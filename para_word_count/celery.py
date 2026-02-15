@@ -10,3 +10,7 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
+
+# Celery configuration for production
+if __name__ == '__main__':
+    app.start()

@@ -108,8 +108,8 @@ def save_paragraph_api(request):
     created_paragraphs = []
     for para_text in paragraphs_text:
         paragraph = Paragraph.objects.create(user=request.user, raw_text=para_text)
-        # Tokenize immediately (synchronous)
-        tokenize_paragraph(paragraph.id)
+        # Tokenize asynchronously using Celery
+        tokenize_paragraph.delay(paragraph.id)
         created_paragraphs.append(paragraph.id)
     
     return Response({
