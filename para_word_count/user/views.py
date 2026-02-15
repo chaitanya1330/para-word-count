@@ -21,6 +21,8 @@ import re
  
 #################### index####################################### 
 def index(request):
+    if request.user.is_authenticated:
+        return redirect('home')
     return render(request, 'user/index.html', {'title':'index'})
  
 ########### register here ##################################### 
