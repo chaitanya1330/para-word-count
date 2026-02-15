@@ -83,9 +83,9 @@ WSGI_APPLICATION = 'para_word_count.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', 'para_word_count'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+        'NAME': os.getenv('DB_NAME', 'app_db'),
+        'USER': os.getenv('DB_USER', 'app_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'app_password'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
