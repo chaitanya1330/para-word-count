@@ -2,8 +2,6 @@ from django.contrib import admin
 from django.urls import path, include
 from para_word_count.user import views as user_view
 from django.contrib.auth import views as auth
-from django.views.generic import RedirectView
-from django.contrib.auth.decorators import login_required
 
 
 def root_redirect(request):
