@@ -13,13 +13,17 @@ def root_redirect(request):
         return redirect('login')
 
 
+class CustomLogoutView(auth.LogoutView):
+    http_method_names = ['get', 'post', 'options']
+
+
 urlpatterns = [
     path('', root_redirect, name='root'),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
     path('user/', include('para_word_count.user.urls')),
     path('login/', user_view.Login, name='login'),
-    path('logout/', auth.LogoutView.as_view(template_name='user/index.html'), name='logout'),
+    path('logout/', user_view.Login, name='logout'),
     path('register/', user_view.register, name='register'),
     path('home/', user_view.home, name='home'),
 ]
